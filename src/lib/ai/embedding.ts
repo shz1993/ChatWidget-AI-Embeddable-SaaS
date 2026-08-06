@@ -6,12 +6,9 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 env.allowLocalModels = false;
 env.useFS = false;
 
-// 💡 PENTING: Gunakan optional chaining (?.) agar TypeScript tidak error jika properti belum ada
+// 💡 Gunakan type casting (as any) untuk bypass strict TypeScript check pada internal env transformers
 if (env.backends?.onnx) {
-  env.backends.onnx.node = false;
-  if (env.backends.onnx.wasm) {
-    env.backends.onnx.wasm.numThreads = 1;
-  }
+  (env.backends.onnx as any).node = false;
 }
 
 class PipelineSingleton {
