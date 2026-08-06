@@ -13,9 +13,8 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
-      this.instance = await pipeline(this.task, this.model, {
-        quantized: true,
-      });
+      // Hapus properti quantized karena sudah ditangani otomatis oleh model default
+      this.instance = await pipeline(this.task, this.model);
     }
     return this.instance;
   }
