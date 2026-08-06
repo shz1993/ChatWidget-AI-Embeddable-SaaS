@@ -6,7 +6,7 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 env.allowLocalModels = false;
 env.useFS = false;
 
-// 💡 Gunakan type casting (as any) untuk bypass strict TypeScript check pada internal env transformers
+// 💡 Matikan node backend agar mutlak menggunakan WASM (onnxruntime-web)
 if (env.backends?.onnx) {
   (env.backends.onnx as any).node = false;
 }

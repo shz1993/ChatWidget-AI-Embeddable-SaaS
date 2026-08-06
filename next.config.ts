@@ -2,7 +2,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['@huggingface/transformers'],
+  serverExternalPackages: ['@huggingface/transformers', 'onnxruntime-web'],
 };
 
 export default nextConfig;
