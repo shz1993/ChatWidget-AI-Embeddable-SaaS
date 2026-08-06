@@ -1,8 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // Mengecualikan paket transformers dari bundling Serverless Vercel
-  serverExternalPackages: ['@xenova/transformers', 'onnxruntime-node'],
+  // Mengecualikan transformers dan onnxruntime dari bundling Turbopack/Webpack serverless
+  serverExternalPackages: ['@xenova/transformers', 'onnxruntime-node', 'onnxruntime-web'],
 };
 
 export default nextConfig;
