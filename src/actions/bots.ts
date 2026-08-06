@@ -5,19 +5,23 @@ import { db } from '@/db';
 import { bots } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { randomUUID } from 'crypto'; // 💡 Generate ID aman khusus untuk Serverless
 
 // 1. Buat Bot Baru
 export async function createBot(name: string) {
   try {
-    const [newBot] = await db.insert(bots).values({
+    const botId = randomUUID(); // Buat ID unik langsung di sisi server
+
+    await db.insert(bots).values({
+      id: botId, // Masukkan ID secara eksplisit
       name,
       welcomeMessage: `Halo! Selamat datang di ${name}. Ada yang bisa kami bantu?`,
       primaryColor: '#2563eb',
       requireLead: true,
-    }).returning();
+    });
 
     revalidatePath('/');
-    return { success: true, botId: newBot.id };
+    return { success: true, botId };
   } catch (error) {
     console.error('❌ Error creating bot:', error);
     return { success: false, error: String(error) };
@@ -46,7 +50,10 @@ export async function getBotById(id: string) {
 }
 
 // 4. Update Pengaturan Bot
-export async function updateBotSettings(id: string, data: { name: string; welcomeMessage: string; primaryColor: string; requireLead: boolean }) {
+export async function updateBotSettings(
+  id: string,
+  data: { name: string; welcomeMessage: string; primaryColor: string; requireLead: boolean }
+) {
   try {
     await db.update(bots).set(data).where(eq(bots.id, id));
     revalidatePath(`/bots/${id}`);
