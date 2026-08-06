@@ -8,12 +8,12 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
-      // 💡 Gunakan Dynamic Import agar aman dari static build-time bundling di Vercel
       const { pipeline, env } = await import('@xenova/transformers');
       
       env.allowLocalModels = false;
       env.useFS = false;
       
+      // Paksa backend ONNX menggunakan mode WASM murni
       if (env.backends?.onnx) {
         env.backends.onnx.wasm.numThreads = 1;
       }
