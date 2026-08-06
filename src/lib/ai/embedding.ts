@@ -1,20 +1,5 @@
 // src/lib/ai/embedding.ts
-import { pipeline, env } from '@huggingface/transformers';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-
-// Konfigurasi wajib untuk Vercel Serverless
-env.allowLocalModels = false;
-env.useFS = false;
-
-// 💡 SOLUSI UTAMA: Matikan node backend dan arahkan WASM ke CDN publik 
-// agar Vercel tidak pernah mencari file .so / binary lokal sama sekali.
-if (env.backends?.onnx) {
-  (env.backends.onnx as any).node = false;
-  (env.backends.onnx as any).wasm = {
-    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/',
-    numThreads: 1,
-  };
-}
 
 class PipelineSingleton {
   static task = 'feature-extraction' as const;
@@ -23,6 +8,21 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
+      // 💡 DYNAMIC IMPORT: Library transformers baru akan di-load HANYA saat fungsi ini dipanggil.
+      // Ini membuat halaman "Toko CS" dan navigasi dashboard tidak akan pernah crash saat diklik.
+      const { pipeline, env } = await import('@huggingface/transformers');
+      
+      env.allowLocalModels = false;
+      env.useFS = false;
+
+      if (env.backends?.onnx) {
+        (env.backends.onnx as any).node = false;
+        (env.backends.onnx as any).wasm = {
+          wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/',
+          numThreads: 1,
+        };
+      }
+
       this.instance = await pipeline(this.task, this.model);
     }
     return this.instance;
