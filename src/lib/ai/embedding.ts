@@ -6,6 +6,12 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 env.allowLocalModels = false;
 env.useFS = false;
 
+// 💡 PENTING: Matikan backend Node agar tidak mencari file .so / onnxruntime-node sama sekali di Vercel
+if (env.backends?.onnx) {
+  env.backends.onnx.node = false;
+  env.backends.onnx.wasm.numThreads = 1;
+}
+
 class PipelineSingleton {
   static task = 'feature-extraction' as const;
   static model = 'Xenova/all-MiniLM-L6-v2';
@@ -13,7 +19,6 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
-      // Hapus properti quantized karena sudah ditangani otomatis oleh model default
       this.instance = await pipeline(this.task, this.model);
     }
     return this.instance;
