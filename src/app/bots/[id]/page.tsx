@@ -4,7 +4,9 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { getBotById, updateBotSettings } from '@/actions/bots';
-import { addKnowledgeToBot, getBotKnowledgeList, deleteKnowledge } from '@/actions/knowledge';
+import { getBotKnowledgeList, deleteKnowledge } from '@/actions/knowledge';
+import { addKnowledgeChunksAction } from '@/actions/knowledge-client'; // Action baru untuk save data saja
+import { generateClientEmbedding, clientSplitText } from '@/lib/ai/client-embedding';
 import { Bot, ArrowLeft, Palette, Code, FileText, CheckCircle2, Trash2, UploadCloud, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 
 export default function BotConfigPage({ params }: { params: Promise<{ id: string }> }) {
@@ -70,15 +72,36 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
     if (!docTitle.trim() || !docContent.trim() || uploadingKnowledge) return;
 
     setUploadingKnowledge(true);
-    const res = await addKnowledgeToBot(botId, docTitle, docContent);
-    if (res.success) {
-      setDocTitle('');
-      setDocContent('');
-      await loadData();
-    } else {
-      alert('Failed to upload knowledge: ' + res.error);
+    try {
+      // 1. Pecah teks di sisi browser
+      const chunks = clientSplitText(docContent);
+      const knowledgeChunksData = [];
+
+      // 2. Generate vector embedding langsung di browser pengguna (Aman dari error Vercel!)
+      for (const chunk of chunks) {
+        const embedding = await generateClientEmbedding(chunk);
+        knowledgeChunksData.push({
+          content: chunk,
+          embedding: embedding,
+        });
+      }
+
+      // 3. Simpan ke database via Server Action khusus
+      const res = await addKnowledgeChunksAction(botId, docTitle, knowledgeChunksData);
+      if (res.success) {
+        setDocTitle('');
+        setDocContent('');
+        await loadData();
+        alert('Knowledge successfully added!');
+      } else {
+        alert('Failed to save knowledge: ' + res.error);
+      }
+    } catch (error: any) {
+      console.error('Error generating embedding:', error);
+      alert('Failed to generate embedding: ' + error.message);
+    } finally {
+      setUploadingKnowledge(false);
     }
-    setUploadingKnowledge(false);
   };
 
   const handleDeleteKnowledge = async (id: string) => {
@@ -95,7 +118,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // 1. Tampilan saat Loading
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500 font-sans text-sm space-y-3">
@@ -105,7 +127,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
     );
   }
 
-  // 2. Tampilan jika Bot Tidak Ditemukan atau Database Error
   if (!bot) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 font-sans p-6 text-center space-y-4">
@@ -130,7 +151,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans antialiased pb-12">
-      {/* Navbar Header */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
@@ -152,7 +172,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
       </header>
 
       <main className="max-w-6xl mx-auto p-6 md:p-8 space-y-8">
-        {/* Section 1: Embed Code Snippet & Live Preview */}
         <div className="p-6 bg-slate-900 text-white rounded-2xl shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-bold text-blue-400 uppercase tracking-wider">
@@ -191,7 +210,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Section 2: Bot Customization Form */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
               <Palette className="h-5 w-5 text-blue-600" />
@@ -257,7 +275,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
             </form>
           </div>
 
-          {/* Section 3: Knowledge Base Upload */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center gap-2 border-b border-slate-100 pb-4">
               <FileText className="h-5 w-5 text-blue-600" />
@@ -295,11 +312,10 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
                 className="flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm disabled:opacity-50"
               >
                 <UploadCloud className="h-4 w-4" />
-                <span>{uploadingKnowledge ? 'Generating Vector Embeddings...' : 'Add Knowledge to Bot'}</span>
+                <span>{uploadingKnowledge ? 'Generating Vector Embeddings (Browser)...' : 'Add Knowledge to Bot'}</span>
               </button>
             </form>
 
-            {/* Knowledge Chunk List */}
             <div className="space-y-2 pt-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                 Uploaded Knowledge Chunks ({knowledgeList.length})
