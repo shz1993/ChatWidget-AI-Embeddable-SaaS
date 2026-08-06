@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/db';
-import { knowledgeChunks } from '@/db/schema';
+import { botKnowledge } from '@/db/schema'; // Diperbarui dari knowledgeChunks ke botKnowledge
 import { revalidatePath } from 'next/cache';
 
 export async function addKnowledgeChunksAction(
@@ -12,7 +12,7 @@ export async function addKnowledgeChunksAction(
 ) {
   try {
     for (const chunk of chunks) {
-      await db.insert(knowledgeChunks).values({
+      await db.insert(botKnowledge).values({
         botId,
         title,
         content: chunk.content,
