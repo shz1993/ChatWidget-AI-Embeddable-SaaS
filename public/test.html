@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tes ChatWidget AI</title>
+  <style>
+    body { font-family: sans-serif; padding: 40px; background: #f1f5f9; text-align: center; }
+    .card { background: white; padding: 40px; border-radius: 16px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛍️ Halaman Uji Coba Widget</h1>
+    <p>Jika tombol merah di bawah bekerja, maka engine AI & Chatbot Anda 100% normal!</p>
+  </div>
+
+  <!-- 💡 TES SCRIPT LANGSUNG (Tanpa file external) -->
+  <script>
+    (function() {
+      // ⚠️ GANTI ID DI BAWAH INI DENGAN BOT ID ASLI ANDA
+      const BOT_ID = "46a0dc8d-0464-44fd-9296-8f1cf218042d"; 
+
+      const btn = document.createElement('button');
+      btn.innerHTML = '💬 Chat Customer Support';
+      btn.style.cssText = 'position:fixed; bottom:30px; right:30px; padding:15px 25px; background:#2563eb; color:white; font-weight:bold; border:none; border-radius:50px; cursor:pointer; box-shadow:0 10px 20px rgba(0,0,0,0.2); z-index:999999;';
+
+      const iframe = document.createElement('iframe');
+      iframe.src = 'http://localhost:3000/widget/' + BOT_ID;
+      iframe.style.cssText = 'position:fixed; bottom:100px; right:30px; width:380px; height:560px; border:none; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.2); display:none; z-index:999998; background:white;';
+
+      let isOpen = false;
+      btn.onclick = function() {
+        isOpen = !isOpen;
+        iframe.style.display = isOpen ? 'block' : 'none';
+      };
+
+      document.body.appendChild(btn);
+      document.body.appendChild(iframe);
+    })();
+  </script>
+</body>
+</html>
