@@ -6,9 +6,14 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 env.allowLocalModels = false;
 env.useFS = false;
 
-// 💡 Matikan node backend agar mutlak menggunakan WASM (onnxruntime-web)
+// 💡 SOLUSI UTAMA: Matikan node backend dan arahkan WASM ke CDN publik 
+// agar Vercel tidak pernah mencari file .so / binary lokal sama sekali.
 if (env.backends?.onnx) {
   (env.backends.onnx as any).node = false;
+  (env.backends.onnx as any).wasm = {
+    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/',
+    numThreads: 1,
+  };
 }
 
 class PipelineSingleton {
