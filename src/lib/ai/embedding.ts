@@ -2,11 +2,11 @@
 import { pipeline, env } from '@xenova/transformers';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
-// Konfigurasi wajib untuk Vercel Serverless & Turbopack
+// Konfigurasi wajib untuk Vercel Serverless
 env.allowLocalModels = false;
 env.useFS = false;
 
-// Paksa gunakan WASM backend untuk menghindari pencarian libonnxruntime native (.so)
+// Paksa gunakan WASM backend
 if (env.backends?.onnx) {
   env.backends.onnx.wasm.numThreads = 1;
 }
@@ -18,7 +18,6 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
-      // Pastikan berjalan di mode aman
       this.instance = await pipeline(this.task, this.model, {
         quantized: true,
       });
