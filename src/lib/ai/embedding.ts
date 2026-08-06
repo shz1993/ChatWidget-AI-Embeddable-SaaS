@@ -6,10 +6,12 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 env.allowLocalModels = false;
 env.useFS = false;
 
-// 💡 PENTING: Matikan backend Node agar tidak mencari file .so / onnxruntime-node sama sekali di Vercel
+// 💡 PENTING: Gunakan optional chaining (?.) agar TypeScript tidak error jika properti belum ada
 if (env.backends?.onnx) {
   env.backends.onnx.node = false;
-  env.backends.onnx.wasm.numThreads = 1;
+  if (env.backends.onnx.wasm) {
+    env.backends.onnx.wasm.numThreads = 1;
+  }
 }
 
 class PipelineSingleton {
