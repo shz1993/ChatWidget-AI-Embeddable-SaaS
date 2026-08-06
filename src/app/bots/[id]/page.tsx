@@ -5,13 +5,14 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { getBotById, updateBotSettings } from '@/actions/bots';
 import { addKnowledgeToBot, getBotKnowledgeList, deleteKnowledge } from '@/actions/knowledge';
-import { Bot, ArrowLeft, Palette, Code, FileText, CheckCircle2, Trash2, UploadCloud, Copy, ExternalLink } from 'lucide-react';
+import { Bot, ArrowLeft, Palette, Code, FileText, CheckCircle2, Trash2, UploadCloud, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 
 export default function BotConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: botId } = use(params);
 
   const [bot, setBot] = useState<any>(null);
   const [knowledgeList, setKnowledgeList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Settings State
   const [name, setName] = useState('');
@@ -28,17 +29,27 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
   const [copied, setCopied] = useState(false);
 
   const loadData = async () => {
-    const botData = await getBotById(botId);
-    if (botData) {
-      setBot(botData);
-      setName(botData.name);
-      setWelcomeMessage(botData.welcomeMessage);
-      setPrimaryColor(botData.primaryColor);
-      setRequireLead(botData.requireLead);
-    }
+    try {
+      setLoading(true);
+      const botData = await getBotById(botId);
+      if (botData) {
+        setBot(botData);
+        setName(botData.name);
+        setWelcomeMessage(botData.welcomeMessage);
+        setPrimaryColor(botData.primaryColor);
+        setRequireLead(botData.requireLead);
 
-    const kList = await getBotKnowledgeList(botId);
-    setKnowledgeList(kList);
+        const kList = await getBotKnowledgeList(botId);
+        setKnowledgeList(kList);
+      } else {
+        setBot(null);
+      }
+    } catch (error) {
+      console.error('Error loading bot data:', error);
+      setBot(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -84,10 +95,35 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // 1. Tampilan saat Loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500 font-sans text-sm space-y-3">
+        <div className="h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="font-semibold text-slate-700">Loading bot details...</p>
+      </div>
+    );
+  }
+
+  // 2. Tampilan jika Bot Tidak Ditemukan atau Database Error
   if (!bot) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 font-sans text-sm">
-        Loading bot details...
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-800 font-sans p-6 text-center space-y-4">
+        <div className="p-3 bg-red-100 text-red-600 rounded-full">
+          <AlertCircle className="h-8 w-8" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="font-bold text-lg">Bot Tidak Ditemukan</h2>
+          <p className="text-xs text-slate-500 max-w-sm">
+            ID Bot ini tidak ada di database atau koneksi database di Vercel terputus. Pastikan Environment Variable <code className="bg-slate-200 px-1 rounded">DATABASE_URL</code> sudah dikonfigurasi.
+          </p>
+        </div>
+        <Link
+          href="/"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-sm"
+        >
+          Kembali ke Dashboard Utama
+        </Link>
       </div>
     );
   }
@@ -125,7 +161,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
             </div>
 
             <div className="flex items-center gap-2">
-              {/* 💡 TOMBOL TES INSTAN (Langsung Buka Chatbot) */}
               <a
                 href={`/widget/${botId}`}
                 target="_blank"
@@ -147,7 +182,7 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
           </div>
 
           <p className="text-xs text-slate-400">
-            Copy and paste into your website, or click button <span className="text-emerald-400 font-bold">"Test / Preview Widget"</span> for try chatbot in new tab !
+            Copy and paste into your website, or click button <span className="text-emerald-400 font-bold">"Test / Preview Widget"</span> to try chatbot in new tab!
           </p>
 
           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 font-mono text-xs text-slate-300 overflow-x-auto">
