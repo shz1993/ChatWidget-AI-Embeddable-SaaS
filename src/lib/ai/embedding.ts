@@ -1,5 +1,10 @@
 // src/lib/ai/embedding.ts
+import { pipeline, env } from '@huggingface/transformers';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+
+// Konfigurasi wajib untuk Vercel Serverless
+env.allowLocalModels = false;
+env.useFS = false;
 
 class PipelineSingleton {
   static task = 'feature-extraction' as const;
@@ -8,17 +13,6 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
-      const { pipeline, env } = await import('@xenova/transformers');
-      
-      env.allowLocalModels = false;
-      env.useFS = false;
-      
-      // 💡 PENTING: Matikan backend Node agar tidak mencari file .so / onnxruntime-node di serverless
-      if (env.backends?.onnx) {
-        env.backends.onnx.node = false; 
-        env.backends.onnx.wasm.numThreads = 1;
-      }
-
       this.instance = await pipeline(this.task, this.model, {
         quantized: true,
       });
