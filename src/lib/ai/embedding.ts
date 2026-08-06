@@ -1,15 +1,5 @@
 // src/lib/ai/embedding.ts
-import { pipeline, env } from '@xenova/transformers';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-
-// Konfigurasi wajib untuk Vercel Serverless
-env.allowLocalModels = false;
-env.useFS = false;
-
-// Paksa gunakan WASM backend
-if (env.backends?.onnx) {
-  env.backends.onnx.wasm.numThreads = 1;
-}
 
 class PipelineSingleton {
   static task = 'feature-extraction' as const;
@@ -18,6 +8,16 @@ class PipelineSingleton {
 
   static async getInstance() {
     if (this.instance === null) {
+      // 💡 Gunakan Dynamic Import agar aman dari static build-time bundling di Vercel
+      const { pipeline, env } = await import('@xenova/transformers');
+      
+      env.allowLocalModels = false;
+      env.useFS = false;
+      
+      if (env.backends?.onnx) {
+        env.backends.onnx.wasm.numThreads = 1;
+      }
+
       this.instance = await pipeline(this.task, this.model, {
         quantized: true,
       });
