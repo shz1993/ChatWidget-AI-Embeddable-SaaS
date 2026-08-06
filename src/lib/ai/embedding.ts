@@ -13,8 +13,9 @@ class PipelineSingleton {
       env.allowLocalModels = false;
       env.useFS = false;
       
-      // Paksa backend ONNX menggunakan mode WASM murni
+      // 💡 PENTING: Matikan backend Node agar tidak mencari file .so / onnxruntime-node di serverless
       if (env.backends?.onnx) {
+        env.backends.onnx.node = false; 
         env.backends.onnx.wasm.numThreads = 1;
       }
 
