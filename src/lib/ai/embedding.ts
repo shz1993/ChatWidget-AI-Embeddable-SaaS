@@ -9,9 +9,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error('HUGGINGFACE_API_KEY is missing in environment variables');
   }
 
-  // Menggunakan endpoint router terbaru Hugging Face
+  // Menggunakan URL eksplisit pipeline feature-extraction pada router Hugging Face
   const response = await fetch(
-    'https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2',
+    'https://router.huggingface.co/hf-inference/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
     {
       method: 'POST',
       headers: {
@@ -20,7 +20,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       },
       body: JSON.stringify({ 
         inputs: sanitizedText,
-        options: { wait_for_model: true } // Menunggu model siap jika sedang cold start
+        options: { wait_for_model: true } 
       }),
     }
   );
