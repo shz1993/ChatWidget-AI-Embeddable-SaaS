@@ -1,41 +1,36 @@
 // src/lib/ai/embedding.ts
-import { pipeline, env } from '@huggingface/transformers';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
-
-// Konfigurasi wajib untuk Vercel Serverless
-env.allowLocalModels = false;
-env.useFS = false;
-
-// 💡 PENTING: Matikan backend Node dan arahkan WASM ke CDN agar Vercel tidak mencari file .so
-if (env.backends?.onnx) {
-  (env.backends.onnx as any).node = false;
-  (env.backends.onnx as any).wasm = {
-    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/',
-    numThreads: 1,
-  };
-}
-
-class PipelineSingleton {
-  static task = 'feature-extraction' as const;
-  static model = 'Xenova/all-MiniLM-L6-v2';
-  static instance: any = null;
-
-  static async getInstance() {
-    if (this.instance === null) {
-      this.instance = await pipeline(this.task, this.model);
-    }
-    return this.instance;
-  }
-}
 
 export async function generateEmbedding(text: string): Promise<number[]> {
   const sanitizedText = text.replace(/\n/g, ' ');
-  const pipelineInstance = await PipelineSingleton.getInstance();
-  const output = await pipelineInstance(sanitizedText, {
-    pooling: 'mean',
-    normalize: true,
-  });
-  return Array.from(output.data);
+  
+  const apiKey = process.env.HUGGINGFACE_API_KEY;
+  if (!apiKey) {
+    throw new Error('HUGGINGFACE_API_KEY is missing in environment variables');
+  }
+
+  // Menggunakan Hugging Face Free Inference API (Model all-MiniLM-L6-v2)
+  const response = await fetch(
+    'https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2',
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inputs: sanitizedText }),
+    }
+  );
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Hugging Face API error: ${errText}`);
+  }
+
+  const result = await response.json();
+  
+  // Hasil dari API Hugging Face berupa array vektor 384 dimensi
+  return result;
 }
 
 export async function splitTextIntoChunks(text: string): Promise<string[]> {
@@ -43,5 +38,6 @@ export async function splitTextIntoChunks(text: string): Promise<string[]> {
     chunkSize: 500,
     chunkOverlap: 100,
   });
+
   return await splitter.splitText(text);
 }
