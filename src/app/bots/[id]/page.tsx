@@ -5,9 +5,9 @@ import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { getBotById, updateBotSettings } from '@/actions/bots';
 import { getBotKnowledgeList, deleteKnowledge } from '@/actions/knowledge';
-import { addKnowledgeChunksAction } from '@/actions/knowledge-client'; // Action baru untuk save data saja
+import { addKnowledgeChunksAction } from '@/actions/knowledge-client'; 
 import { generateClientEmbedding, clientSplitText } from '@/lib/ai/client-embedding';
-import { Bot, ArrowLeft, Palette, Code, FileText, CheckCircle2, Trash2, UploadCloud, Copy, ExternalLink, AlertCircle } from 'lucide-react';
+import { Bot, ArrowLeft, Palette, Code, FileText, CheckCircle2, Trash2, UploadCloud, Copy, ExternalLink, AlertCircle, BarChart3 } from 'lucide-react';
 
 export default function BotConfigPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: botId } = use(params);
@@ -73,11 +73,9 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
 
     setUploadingKnowledge(true);
     try {
-      // 1. Pecah teks di sisi browser
       const chunks = clientSplitText(docContent);
       const knowledgeChunksData = [];
 
-      // 2. Generate vector embedding langsung di browser pengguna (Aman dari error Vercel!)
       for (const chunk of chunks) {
         const embedding = await generateClientEmbedding(chunk);
         knowledgeChunksData.push({
@@ -86,7 +84,6 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
         });
       }
 
-      // 3. Simpan ke database via Server Action khusus
       const res = await addKnowledgeChunksAction(botId, docTitle, knowledgeChunksData);
       if (res.success) {
         setDocTitle('');
@@ -167,6 +164,17 @@ export default function BotConfigPage({ params }: { params: Promise<{ id: string
               <h1 className="font-extrabold text-slate-900 text-base">{bot.name}</h1>
               <p className="text-xs text-slate-500">Bot Configurator & Knowledge Ingestion</p>
             </div>
+          </div>
+
+          {/* Tombol Akses Dashboard CRM & Leads yang Diperbaiki */}
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/bots/${botId}/crm`}
+              className="flex items-center gap-1.5 bg-slate-900 hover:bg-black text-white font-bold text-xs px-3 py-2 rounded-xl transition-all shadow-sm"
+            >
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span>Dashboard CRM & Leads</span>
+            </Link>
           </div>
         </div>
       </header>

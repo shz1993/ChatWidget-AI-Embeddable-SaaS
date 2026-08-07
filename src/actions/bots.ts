@@ -5,15 +5,15 @@ import { db } from '@/db';
 import { bots } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { randomUUID } from 'crypto'; // 💡 Generate ID aman khusus untuk Serverless
+import { randomUUID } from 'crypto';
 
 // 1. Buat Bot Baru
 export async function createBot(name: string) {
   try {
-    const botId = randomUUID(); // Buat ID unik langsung di sisi server
+    const botId = randomUUID();
 
     await db.insert(bots).values({
-      id: botId, // Masukkan ID secara eksplisit
+      id: botId,
       name,
       welcomeMessage: `Halo! Selamat datang di ${name}. Ada yang bisa kami bantu?`,
       primaryColor: '#2563eb',
@@ -40,6 +40,11 @@ export async function getBots() {
 
 // 3. Ambil Detail Bot Berdasarkan ID
 export async function getBotById(id: string) {
+  // 🛡️ PENGAMAN: Cegah query jika id undefined atau kosong
+  if (!id || id === 'undefined') {
+    return null;
+  }
+
   try {
     const [bot] = await db.select().from(bots).where(eq(bots.id, id));
     return bot || null;
@@ -54,6 +59,10 @@ export async function updateBotSettings(
   id: string,
   data: { name: string; welcomeMessage: string; primaryColor: string; requireLead: boolean }
 ) {
+  if (!id || id === 'undefined') {
+    return { success: false, error: 'Invalid bot ID' };
+  }
+
   try {
     await db.update(bots).set(data).where(eq(bots.id, id));
     revalidatePath(`/bots/${id}`);
@@ -67,6 +76,10 @@ export async function updateBotSettings(
 
 // 5. Hapus Bot
 export async function deleteBot(id: string) {
+  if (!id || id === 'undefined') {
+    return { success: false, error: 'Invalid bot ID' };
+  }
+
   try {
     await db.delete(bots).where(eq(bots.id, id));
     revalidatePath('/');
