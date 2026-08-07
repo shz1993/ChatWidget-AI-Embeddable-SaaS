@@ -9,26 +9,34 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     throw new Error('HUGGINGFACE_API_KEY is missing in environment variables');
   }
 
-  // Menggunakan Hugging Face OpenAI-compatible embeddings router endpoint
-  const response = await fetch('https://router.huggingface.co/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'sentence-transformers/all-MiniLM-L6-v2',
-      input: sanitizedText,
-    }),
-  });
+  // Menggunakan URL router resmi Hugging Face untuk feature-extraction (embeddings)
+  const response = await fetch(
+    'https://router.huggingface.co/hf-inference/models/sentence-transformers/all-MiniLM-L6-v2/pipeline/feature-extraction',
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: sanitizedText,
+        options: { wait_for_model: true }
+      }),
+    }
+  );
 
   if (!response.ok) {
     const errText = await response.text();
     throw new Error(`Hugging Face API error: ${errText}`);
   }
 
-  const data = await response.json();
-  return data.data[0].embedding;
+  const result = await response.json();
+  
+  // Tangani struktur hasil array dari feature-extraction
+  if (Array.isArray(result) && Array.isArray(result[0])) {
+    return result[0];
+  }
+  return result;
 }
 
 export async function splitTextIntoChunks(text: string): Promise<string[]> {
