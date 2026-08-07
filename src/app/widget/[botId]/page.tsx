@@ -2,13 +2,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useParams } from 'next/link'; // Import Link here
+import { useParams } from 'next/navigation'; // 🛠️ Diperbaiki: useParams dari next/navigation
 import Link from 'next/link';
-import { useParams as useNavParams } from 'next/navigation';
 import { Send, User, Loader2, Bot, MessageCircle, ArrowLeft } from 'lucide-react';
 
 export default function WidgetPage() {
-  const { botId } = useNavParams<{ botId: string }>();
+  const { botId } = useParams<{ botId: string }>();
   
   // State Lead
   const [name, setName] = useState('');
